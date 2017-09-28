@@ -3,6 +3,7 @@ import * as Stream from 'stream';
 import * as crypto from 'crypto';
 import ReadStream = NodeJS.ReadStream;
 import WriteStream = NodeJS.WriteStream;
+import { Stats } from 'fs';
 
 type HexBase64Latin1Encoding = 'latin1' | 'hex' | 'base64';
 
@@ -24,7 +25,7 @@ class File implements File$ {
     return fs.createWriteStream(this.path);
   }
 
-  get info(): Promise<any> {
+  get info(): Promise<Stats> {
     return fs.stat(this.path);
   }
 
