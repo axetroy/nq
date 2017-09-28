@@ -116,14 +116,15 @@ class File implements File$ {
       return this;
     } catch (err) {
       return <Promise<File>>new Promise((resolve, reject) => {
-        const ws = this.writeStream;
-        ws.on(this.STREAM_ERROR, err => {
-          reject(err);
-        });
-        ws.on(this.STREAM_FINISH, () => {
-          resolve(this);
-        });
-        ws.end();
+        let err: Error;
+        this.writeStream
+          .on(this.STREAM_ERROR, (error: Error) => {
+            err = error;
+          })
+          .on(this.STREAM_CLOSE, () => {
+            err ? reject(err) : resolve(this);
+          })
+          .end();
       });
     }
   }
@@ -231,30 +232,31 @@ class File implements File$ {
   }
 
   /**
-   * move the file and delete the file after move success
+   * move the file and delete the file after move success, return a new File
    * @param toFilePath
    * @returns {Promise.<File>}
    */
   async move(toFilePath: string): Promise<File> {
-    await this.copy(toFilePath);
+    const file: File = await this.copy(toFilePath);
     await this.remove();
-    return this;
+    return file;
   }
 
   /**
-   * copy the file, do not delete the origin file
+   * copy the file, do not delete the origin file, return a new File()
    * @param {string} toFilePath
    * @returns {Promise<File>}
    */
   async copy(toFilePath: string): Promise<File> {
     return <Promise<File>>new Promise((resolve, reject) => {
+      let err: Error;
       this.readStream
         .pipe($(toFilePath).writeStream)
-        .on('error', (err: Error) => {
-          reject(err);
+        .on(this.STREAM_ERROR, (error: Error) => {
+          err = error;
         })
-        .on('finish', () => {
-          resolve(this);
+        .on(this.STREAM_CLOSE, () => {
+          err ? reject(err) : resolve(new File(toFilePath));
         });
     });
   }
@@ -268,17 +270,18 @@ class File implements File$ {
     encoding: HexBase64Latin1Encoding
   ): Promise<string> {
     return <Promise<string>>new Promise((resolve, reject) => {
-      const rs = this.readStream;
+      let err: Error;
       const hash = crypto.createHash(algorithm);
-      rs.on('data', data => {
-        hash.update(data);
-      });
-      rs.on('error', err => {
-        reject(err);
-      });
-      rs.on('end', async () => {
-        resolve(hash.digest(encoding));
-      });
+      this.readStream
+        .on(this.STREAM_DATA, data => {
+          hash.update(data);
+        })
+        .on(this.STREAM_ERROR, (error: Error) => {
+          err = error;
+        })
+        .on(this.STREAM_END, async () => {
+          err ? reject(err) : resolve(hash.digest(encoding));
+        });
     });
   }
 
@@ -296,14 +299,15 @@ class File implements File$ {
    */
   async empty(): Promise<File> {
     return <Promise<File>>new Promise((resolve, reject) => {
-      const ws = this.writeStream;
-      ws.on('error', err => {
-        reject(err);
-      });
-      ws.on('finish', () => {
-        resolve(this);
-      });
-      ws.end('');
+      let err: Error;
+      this.writeStream
+        .on(this.STREAM_ERROR, (error: Error) => {
+          err = error;
+        })
+        .on(this.STREAM_CLOSE, () => {
+          err ? reject(err) : resolve(this);
+        })
+        .end('');
     });
   }
 }
