@@ -1,9 +1,9 @@
 {
-  "name": "nq",
+  "name": "@axetroy/nq",
   "engines": {
     "node": ">=6.5.0"
   },
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "Graceful File Accessor for NodeJs",
   "main": "./build/index.js",
   "scripts": {
