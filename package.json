@@ -7,12 +7,12 @@
   "description": "Graceful File Accessor for NodeJs",
   "main": "./build/index.js",
   "scripts": {
-    "dev": "tsc && cross-env GPM_ENV=development ./bin/gpm",
-    "test": "tsc && cross-env GPM_ENV=development ava",
+    "test": "tsc && nyc ava",
     "coverage": "echo coverage done",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 0",
     "generate": "all-contributors generate",
     "docs": "docsify serve docs",
+    "start": "tsc -w",
     "build": "tsc"
   },
   "repository": {
