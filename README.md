@@ -2,6 +2,7 @@
 
 [![Greenkeeper badge](https://badges.greenkeeper.io/axetroy/nq.svg)](https://greenkeeper.io/)
 [![Build Status](https://travis-ci.org/axetroy/nq.svg?branch=master)](https://travis-ci.org/axetroy/nq)
+[![Coverage Status](https://coveralls.io/repos/github/axetroy/nq/badge.svg?branch=master)](https://coveralls.io/github/axetroy/nq?branch=master)
 [![Dependency](https://david-dm.org/axetroy/nq.svg)](https://david-dm.org/axetroy/nq)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 [![Prettier](https://img.shields.io/badge/Code%20Style-Prettier-green.svg)](https://github.com/prettier/prettier)
