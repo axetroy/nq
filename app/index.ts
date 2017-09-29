@@ -2,10 +2,7 @@ import * as fs from 'fs-extra';
 import * as Stream from 'stream';
 import * as crypto from 'crypto';
 import * as path from 'path';
-import ReadStream = NodeJS.ReadStream;
-import WriteStream = NodeJS.WriteStream;
 import { Stats } from 'fs';
-import { error } from 'util';
 
 type HexBase64Latin1Encoding = 'latin1' | 'hex' | 'base64';
 
@@ -21,12 +18,12 @@ interface File$ {
   readonly isExist: Promise<boolean>;
   readonly info: Promise<Stats>;
   readonly size: Promise<number>;
-  readonly readStream: Stream.Readable;
-  readonly writeStream: Stream.Writable;
+  // readStream(): Stream.Readable;
+  // writeStream(): Stream.Writable;
   ensure(): Promise<File>;
   // pipe(nextStream: WriteStream | Stream.Writable | File): Promise<File>;
   text(
-    input?: void | string | Buffer | Stream.Readable | WriteStream | File
+    input?: void | string | Buffer | Stream.Readable | File
   ): Promise<String | Buffer | File>;
   remove(): Promise<File>;
   move(toFilePath: string): Promise<File>;
@@ -43,7 +40,7 @@ const READ_STREAM_END: string = 'end'; // read
 const READ_STREAM_DATA: string = 'data'; // read
 const WRITE_STREAM_FINISH: string = 'finish'; // read
 
-class File implements File$ {
+export class File implements File$ {
   private ENCODING: string = 'utf8';
 
   constructor(private selector: string) {
@@ -51,10 +48,34 @@ class File implements File$ {
       return new File(this.selector);
     }
   }
-  get readStream(): Stream.Readable {
-    return fs.createReadStream(this.selector);
+  readStream(
+    options?:
+      | string
+      | {
+          flags?: string;
+          encoding?: string;
+          fd?: number;
+          mode?: number;
+          autoClose?: boolean;
+          start?: number;
+          end?: number;
+        }
+  ): Stream.Readable {
+    return fs.createReadStream(this.selector, options);
   }
-  get writeStream(): Stream.Writable {
+
+  writeStream(
+    options?:
+      | string
+      | {
+          flags?: string;
+          encoding?: string;
+          fd?: number;
+          mode?: number;
+          autoClose?: boolean;
+          start?: number;
+        }
+  ): Stream.Writable {
     return fs.createWriteStream(this.selector);
   }
 
@@ -119,7 +140,7 @@ class File implements File$ {
     } catch (err) {
       return <Promise<File>>new Promise((resolve, reject) => {
         let err: Error;
-        this.writeStream
+        this.writeStream()
           .on(STREAM_ERROR, (error: Error) => {
             err = error;
           })
@@ -136,13 +157,11 @@ class File implements File$ {
    * @param nextStream
    * @returns {File}
    */
-  pipe(
-    nextStream: WriteStream | Stream.Writable | File
-  ): WriteStream | Stream.Writable {
+  pipe(nextStream: Stream.Writable | File): Stream.Writable {
     if (nextStream instanceof Stream) {
-      return this.readStream.pipe(<WriteStream>nextStream);
+      return this.readStream().pipe(<Stream.Writable>nextStream);
     } else if (nextStream instanceof File) {
-      return this.readStream.pipe((<File>nextStream).writeStream);
+      return this.readStream().pipe((<File>nextStream).writeStream());
     } else {
       throw new Error(`Invalid Stream to Pipe`);
     }
@@ -155,7 +174,7 @@ class File implements File$ {
    * @returns {Promise<String | Buffer | "stream".internal | File>}
    */
   async text(
-    input?: void | string | Buffer | Stream.Readable | WriteStream | File,
+    input?: void | string | Buffer | Stream.Readable | File,
     encoding: string = this.ENCODING
   ): Promise<String | Buffer | File> {
     return <Promise<String | Buffer | File>>new Promise((resolve, reject) => {
@@ -167,7 +186,7 @@ class File implements File$ {
         // if no input, then read the file text
         case input === void 0:
           let rdata = '';
-          this.readStream
+          this.readStream()
             .setEncoding(encoding)
             .on(READ_STREAM_DATA, d => {
               rdata += d;
@@ -181,7 +200,7 @@ class File implements File$ {
           break;
         // if pass the string or buffer
         case typeof input === 'string' || input instanceof Buffer:
-          writeStream = this.writeStream;
+          writeStream = this.writeStream();
           writeStream
             .on(STREAM_ERROR, (error: Error) => {
               err = error;
@@ -197,10 +216,10 @@ class File implements File$ {
           break;
         // if pass the file entity
         case input instanceof File:
-          readStream = (<File>input).readStream;
+          readStream = (<File>input).readStream();
         // if pass a readable stream
         case input instanceof Stream.Readable:
-          writeStream = this.writeStream;
+          writeStream = this.writeStream();
 
           writeStream.setDefaultEncoding(encoding).on(READ_STREAM_END, () => {
             err ? reject(err) : resolve(this);
@@ -232,7 +251,7 @@ class File implements File$ {
     return <Promise<Buffer>>new Promise((resolve, reject) => {
       let arr: Buffer[] = [];
       let err: Error;
-      this.readStream
+      this.readStream()
         .on(READ_STREAM_DATA, (chunk: Buffer) => {
           arr.push(chunk);
         })
@@ -299,7 +318,7 @@ class File implements File$ {
   ): Promise<File> {
     return <Promise<File>>new Promise((resolve, reject) => {
       let err: Error;
-      this.readStream
+      this.readStream()
         .pipe(fs.createWriteStream(toFilePath, options))
         .on(STREAM_ERROR, (error: Error) => {
           err = error;
@@ -321,7 +340,7 @@ class File implements File$ {
     return <Promise<string>>new Promise((resolve, reject) => {
       let err: Error;
       const hash = crypto.createHash(algorithm);
-      this.readStream
+      this.readStream()
         .on(READ_STREAM_DATA, data => {
           hash.update(data);
         })
@@ -353,7 +372,7 @@ class File implements File$ {
         resolve();
       } else {
         let err: Error;
-        this.writeStream
+        this.writeStream()
           .on(STREAM_ERROR, (error: Error) => {
             err = error;
           })
