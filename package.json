@@ -46,7 +46,7 @@
     "cross-env": "^5.0.5",
     "docsify-cli": "^4.1.10",
     "nyc": "^11.2.1",
-    "ts-node": "^3.3.0",
+    "ts-node": "^4.0.0",
     "typescript": "^2.5.3"
   }
 }
