@@ -37,7 +37,7 @@
     "fs-extra": "^5.0.0"
   },
   "devDependencies": {
-    "@types/fs-extra": "^4.0.2",
+    "@types/fs-extra": "^5.0.1",
     "@types/node": "^9.3.0",
     "all-contributors-cli": "^4.5.0",
     "ava": "^0.24.0",
